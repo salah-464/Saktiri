@@ -5,25 +5,33 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      
       - name: Prepare
         run: |
           ls -la
-          echo "--- finding zip ---"
-          find . -name "*.zip" -type f
-          unzip -o *.zip || unzip -o Saktiri.zip || echo "no zip found"
-          rm -f *.zip
+          unzip -o Saktiri.zip
+          rm -f Saktiri.zip
+          # لو في مجلد ثاني جوا
+          if [ -d "Saktiri" ]; then
+            cp -r Saktiri/* . 2>/dev/null || true
+            cp -r Saktiri/.gradle . 2>/dev/null || true
+            cp -r Saktiri/.github . 2>/dev/null || true
+            rm -rf Saktiri
+          fi
           ls -la
-          # لو فك الضغط عمل مجلد ثاني انقله لفوق
-          if [ -d "Saktiri" ] && [ -f "Saktiri/gradlew" ]; then mv Saktiri/* .; rm -rf Saktiri; fi
-      - uses: actions/setup-java@v5
+          chmod +x gradlew || true
+          
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
         with:
           java-version: '17'
           distribution: 'temurin'
-      - name: Build
-        run: |
-          chmod +x gradlew
-          ./gradlew assembleDebug --info
-      - uses: actions/upload-artifact@v4
+          
+      - name: Build APK
+        run: ./gradlew assembleDebug
+          
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
         with:
           name: Saktiri-APK
           path: app/build/outputs/apk/debug/*.apk
